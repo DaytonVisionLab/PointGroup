@@ -13,6 +13,7 @@ from util.config import cfg
 from util.log import logger
 import util.utils as utils
 
+
 def init():
     # copy important files to backup
     backup_dir = os.path.join(cfg.exp_path, 'backup_files')
@@ -123,6 +124,8 @@ def eval_epoch(val_loader, model, model_fn, epoch):
 
 
 if __name__ == '__main__':
+    # Set false to prevent CUDA version compatability issue (using CUDA 10.1)
+    torch.backends.cudnn.enabled = False
     ##### init
     init()
 
@@ -162,14 +165,28 @@ if __name__ == '__main__':
 
     ##### dataset
     if cfg.dataset == 'scannetv2':
-        if data_name == 'scannet':
-            import data.scannetv2_inst
-            dataset = data.scannetv2_inst.Dataset()
-            dataset.trainLoader()
-            dataset.valLoader()
-        else:
-            print("Error: no data loader - " + data_name)
-            exit(0)
+        import data.scannetv2_inst
+        dataset = data.scannetv2_inst.Dataset()
+        dataset.trainLoader()
+        dataset.valLoader()
+    elif cfg.dataset == 'DALES':
+        import data.DALES_inst
+        dataset = data.DALES_inst.Dataset()
+        dataset.trainLoader()
+        dataset.valLoader()
+    elif cfg.dataset == "DALESmini":
+        import data.DALESmini_inst
+        dataset = data.DALESmini_inst.Dataset()
+        dataset.trainLoader()
+        dataset.valLoader()
+    elif cfg.dataset == 'DALEStext':
+        import data.DALEStext_inst
+        dataset = data.DALEStext_inst.Dataset()
+        dataset.trainLoader()
+        dataset.valLoader()
+    else:
+        print("Error: no data loader for {}".format(cfg.dataset))
+        exit(0)
 
     ##### resume
     start_epoch = utils.checkpoint_restore(model, cfg.exp_path, cfg.config.split('/')[-1][:-5], use_cuda)      # resume from the latest epoch, or specify the epoch to restore
