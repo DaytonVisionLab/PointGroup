@@ -25,7 +25,7 @@ class Instance(object):
         self.vert_count = int(self.get_instance_verts(mesh_vert_instances, instance_id))
 
     def get_label_id(self, instance_id):
-        return int(instance_id // 1000)
+        return int(instance_id // 10000)
 
     def get_instance_verts(self, mesh_vert_instances, instance_id):
         return (mesh_vert_instances == instance_id).sum()
