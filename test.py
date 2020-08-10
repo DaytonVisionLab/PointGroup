@@ -1,3 +1,4 @@
+
 '''
 PointGroup test.py
 Written by Li Jiang
@@ -27,7 +28,7 @@ def init():
     os.system('cp {} {}'.format(cfg.config, backup_dir))
 
     global semantic_label_idx
-    semantic_label_idx = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39]
+    semantic_label_idx = [1, 2, 3, 4, 5, 6, 7, 8]
 
     logger.info(cfg)
 
@@ -41,13 +42,25 @@ def test(model, model_fn, data_name, epoch):
     logger.info('>>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>')
 
     if cfg.dataset == 'scannetv2':
-        if data_name == 'scannet':
-            from data.scannetv2_inst import Dataset
-            dataset = Dataset(test=True)
-            dataset.testLoader()
-        else:
-            print("Error: no data loader - " + data_name)
-            exit(0)
+        from data.scannetv2_inst import Dataset
+        dataset = Dataset(test=True)
+        dataset.testLoader()
+    elif cfg.dataset == 'DALES':
+        from data.DALES_inst import Dataset
+        dataset = Dataset(test=True)
+        dataset.testLoader()
+    elif cfg.dataset == "DALESmini":
+        from data.DALESmini_inst import Dataset
+        dataset = Dataset(test=True)
+        dataset.testLoader()
+    elif cfg.dataset == 'DALEStext':
+        from data.DALEStext_inst import Dataset
+        dataset = Dataset(test=True)
+        dataset.testLoader()
+    else:
+        print("Error: no data loader for {}".format(cfg.dataset))
+        exit(0)
+
     dataloader = dataset.test_data_loader
 
     with torch.no_grad():
@@ -57,10 +70,15 @@ def test(model, model_fn, data_name, epoch):
         matches = {}
         for i, batch in enumerate(dataloader):
             N = batch['feats'].shape[0]
-            test_scene_name = dataset.test_file_names[int(batch['id'][0])].split('/')[-1][:12]
+            test_scene_name = dataset.test_file_names[int(batch['id'][0])].split('/')[-1][:21]
 
             start1 = time.time()
-            preds = model_fn(batch, model, epoch)
+            try:
+                preds = model_fn(batch, model, epoch)
+            except:
+                print("Error making preds on {}".format(test_scene_name))
+                import ipdb
+                ipdb.set_trace(context=10)
             end1 = time.time() - start1
 
             ##### get predictions (#1 semantic_pred, pt_offsets; #2 scores, proposals_pred)
@@ -109,6 +127,17 @@ def test(model, model_fn, data_name, epoch):
                 cluster_scores = scores_pred[pick_idxs]
                 cluster_semantic_id = semantic_id[pick_idxs]
 
+                # create a cluster for all points that have semantic label ground and no cluster
+                ground = np.ones(np.array(clusters.cpu()).shape[1])
+                for row in np.array(clusters.cpu(), dtype=np.uint32):
+                    ground = np.where(row != 0, 0, ground)
+                ground = np.where(np.array(semantic_pred.cpu(), dtype=np.uint32) == 0, ground, 0)
+
+                # add the new ground cluster, it's score (0.0 because it wasn't predicted), and it's semantic id
+                clusters = torch.cat((clusters, torch.from_numpy(ground).unsqueeze(0).type(torch.IntTensor).cuda()))
+                cluster_scores = torch.cat((cluster_scores, torch.tensor([0.0]).cuda()))
+                cluster_semantic_id = torch.cat((cluster_semantic_id, torch.tensor([1]).cuda()))
+
                 nclusters = clusters.shape[0]
 
                 ##### prepare for evaluation
@@ -139,16 +168,20 @@ def test(model, model_fn, data_name, epoch):
 
 
             if(epoch > cfg.prepare_epochs and cfg.save_instance):
-                f = open(os.path.join(result_dir, test_scene_name + '.txt'), 'w')
-                for proposal_id in range(nclusters):
-                    clusters_i = clusters[proposal_id].cpu().numpy()  # (N)
-                    semantic_label = np.argmax(np.bincount(semantic_pred[np.where(clusters_i == 1)[0]].cpu()))
-                    score = cluster_scores[proposal_id]
-                    f.write('predicted_masks/{}_{:03d}.txt {} {:.4f}'.format(test_scene_name, proposal_id, semantic_label_idx[semantic_label], score))
-                    if proposal_id < nclusters - 1:
-                        f.write('\n')
-                    np.savetxt(os.path.join(result_dir, 'predicted_masks', test_scene_name + '_%03d.txt' % (proposal_id)), clusters_i, fmt='%d')
-                f.close()
+                try:
+                    f = open(os.path.join(result_dir, test_scene_name + '.txt'), 'w')
+                    for proposal_id in range(nclusters):
+                        clusters_i = clusters[proposal_id].cpu().numpy()  # (N)
+                        semantic_label = np.argmax(np.bincount(semantic_pred[np.where(clusters_i == 1)[0]].cpu()))
+                        score = cluster_scores[proposal_id]
+                        f.write('predicted_masks/{}_{:03d}.txt {} {:.4f}'.format(test_scene_name, proposal_id, semantic_label_idx[semantic_label], score))
+                        if proposal_id < nclusters - 1:
+                            f.write('\n')
+                        np.savetxt(os.path.join(result_dir, 'predicted_masks', test_scene_name + '_%03d.txt' % (proposal_id)), clusters_i, fmt='%d')
+                    f.close()
+                except:
+                    print("Error with {}".format(test_scene_name))
+
             end3 = time.time() - start3
             end = time.time() - start
             start = time.time()
@@ -177,6 +210,9 @@ def non_max_suppression(ious, scores, threshold):
 
 
 if __name__ == '__main__':
+    # Prevented CUDNN error. Possibly caused by CUDA version compatability issue (using 10.1)
+    torch.backends.cudnn.enabled = False
+
     init()
 
     ##### get model version and data version
