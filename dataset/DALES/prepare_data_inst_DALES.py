@@ -15,58 +15,49 @@ opt = parser.parse_args()
 
 split = opt.data_split
 print('data split: {}'.format(split))
-point_files = sorted(glob.glob(split + '/*_vh_clean_2.ply'))
-if opt.data_split != 'test':
-    point_label_files = sorted(glob.glob(split + '/*_vh_clean_2.labels.ply'))
-    instance_files = sorted(glob.glob(split + '/*.instances.json'))
-    assert len(point_files) == len(point_label_files)
-    assert len(point_label_files) == len(instance_files)
+point_files = sorted(glob.glob(split + '/*.ply'))
 
 def create_test_data(ply):
     '''
     Creates inst_nostuff.pth file for each test .ply file.
 
-    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00_vh_clean_2.ply"
+    ply: Name of the .ply file being used. e.g. "scene0000_0000.ply"
     '''
     print(ply)
 
     data = plyfile.PlyData().read(ply)
     points = np.array([list(x) for x in data.elements[0]])
-    coords = np.ascontiguousarray(points[:, :3] - points[:, :3].mean(0))
-    colors = np.ascontiguousarray(points[:, 3:6]) / 127.5 - 1
+    coords = np.ascontiguousarray(points[:, :3] - points[:, :3].mean(0), dtype=np.float32)
+    colors = np.ascontiguousarray(np.zeros(np.shape(coords)), dtype=np.float32)
 
-    torch.save((coords, colors), ply[:-15] + '_inst_nostuff.pth')
-    print('Saving to ' + ply[:-15] + '_inst_nostuff.pth')
+    torch.save((coords, colors), ply[:-4] + '_inst_nostuff.pth')
+    print('Saving to ' + ply[:-4] + '_inst_nostuff.pth')
 
 
 def create_train_data(ply):
     '''
     Creates inst_nostuff.pth file for each train/val .ply file.
 
-    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00_vh_clean_2.ply"
+    ply: Name of the .ply file being used. e.g. "scene0000_0000.ply"
     '''
-    labels_file = ply[:-3] + 'labels.ply'
-    instances_file = ply[:-15] + '.instances.json'
     print(ply)
 
     data = plyfile.PlyData().read(ply)
     points = np.array([list(x) for x in data.elements[0]])
-    coords = np.ascontiguousarray(points[:, :3] - points[:, :3].mean(0))
-    colors = np.ascontiguousarray(points[:, 3:6]) / 127.5 - 1
+    coords = np.ascontiguousarray(points[:, :3] - points[:, :3].mean(0), dtype=np.float32)
+    colors = np.ascontiguousarray(np.zeros(np.shape(coords)), dtype=np.float32)
 
-    data_labels = plyfile.PlyData().read(labels_file)
-    sem_labels = remapper[np.array(data_labels.elements[0]['label'])]
-#    sem_labels = np.array(data_labels.elements[0]['label'])
+    sem_labels = np.array(data.elements[0]['sem_class'])
+    inst_labels = np.array(data.elements[0]['ins_class']) + 1
 
-    with open(instances_file) as jsondata:
-        data_instances = json.load(jsondata)
-        instance_labels = np.array(data_instances['instances'])
-
-    torch.save((coords, colors, sem_labels, instance_labels), ply[:-15] + '_inst_nostuff.pth')
-    print('Saving to ' + ply[:-15] + '_inst_nostuff.pth')
+    torch.save((coords, colors, sem_labels, inst_labels), ply[:-4] + '_inst_nostuff.pth')
+    print('Saving to ' + ply[:-4] + '_inst_nostuff.pth')
 
 #for fn in files:
 #    f(fn)
+#import ipdb
+#ipdb.set_trace(context=10)
+#create_train_data("experiment/whatever.ply")
 
 p = mp.Pool(processes=mp.cpu_count())
 if opt.data_split == 'test':

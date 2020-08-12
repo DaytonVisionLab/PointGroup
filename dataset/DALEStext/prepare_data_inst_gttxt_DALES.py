@@ -37,7 +37,7 @@ if __name__ == '__main__':
                 sem_id = int(label[instance_mask[0]])
                 if(sem_id == -100): sem_id = 0
                 semantic_label = semantic_label_idxs[sem_id]
-                instance_label_new[instance_mask] = semantic_label * 1000 + inst_id + 1
+                instance_label_new[instance_mask] = semantic_label * 10000 + inst_id + 1
 
         np.savetxt(os.path.join(split + '_gt', scene_name + '.txt'), instance_label_new, fmt='%d')
 

@@ -26,7 +26,7 @@ def create_test_data(ply):
     '''
     Creates inst_nostuff.pth file for each test .ply file.
 
-    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00_vh_clean_2.ply"
+    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00.ply"
     '''
     print(ply)
 
@@ -43,7 +43,7 @@ def create_train_data(ply):
     '''
     Creates inst_nostuff.pth file for each train/val .ply file.
 
-    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00_vh_clean_2.ply"
+    ply: Name of the .ply file being used. e.g. "scene0000_0000_00_00.ply"
     '''
     labels_file = ply[:-3] + 'labels.ply'
     instances_file = ply[:-15] + '.instances.json'
