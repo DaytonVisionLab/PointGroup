@@ -1,4 +1,4 @@
-# PointGroup
+# PointGroup for the Dayton Vision Lab
 ## PointGroup: Dual-Set Point Grouping for 3D Instance Segmentation (CVPR2020)
 ![overview](https://github.com/llijiang/PointGroup/blob/master/doc/overview.png)
 
@@ -16,7 +16,7 @@ Instance segmentation is an important task for scene understanding. Compared to 
 ### Requirements
 * Python 3.7.0
 * Pytorch 1.1.0
-* CUDA 10.0 (VisionLab uses RTX GPU which is incompatible with CUDA 9.0, we will need to use CUDA 10.0 instead of 9.0)
+* CUDA 10.0 (vlab-WaterCooling uses RTX GPU which is incompatible with CUDA 9.0, we will need to use CUDA 10.0 instead of 9.0)
 
 ### Virtual Environment
 ```
@@ -32,13 +32,13 @@ wget https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda_1
 chmod +x cuda_10.0.120_410.48_linux
 ./cuda_10.0.120_410.48_linux
 ```
-* Accept the EULA. Hold spacebar to read and understand the EULA really, really fast.
-* Do NOT install the driver. Install only the cudatoolkit.
+* Accept the EULA. Hold spacebar to "read and understand" the EULA super quick.
+* Do not install the driver. Install only the cudatoolkit.
 * Set the cudatoolkit location to /home/vlab/anaconda3/envs/PointGroup/cuda
-* Do NOT create a symbolic link in /usr/local.
+* Do not create a symbolic link in /usr/local.
 
 ### Install cuDNN
-* Go to https://developer.nvidia.com/rdp/cudnn-download and select 'Download cuDNN v7.6.5 for CUDA 10.0'. (You will need to create/sign in to Nvidia account)
+* Go to https://developer.nvidia.com/rdp/cudnn-download and select 'Download cuDNN v7.6.5 for CUDA 10.0'. (You will need to create/sign in to an Nvidia account)
 * Select 'cuDNN Library for Linux'.
 * Download cudnn-10.0-linux-x64-v7.6.5.32.tgz and place it in /home/vlab/anaconda3/envs/PointGroup.
 * Uncompress the file:
@@ -59,7 +59,7 @@ export CUDNN_INCLUDE_DIR=/home/vlab/anaconda3/envs/PointGroup/cuda/include
 
 (1) Clone the PointGroup repository.
 ```
-git clone https://github.com/llijiang/PointGroup.git --recursive
+git clone https://github.com/DaytonVisionLab/PointGroup.git --recursive
 cd PointGroup
 ```
 
@@ -233,13 +233,13 @@ Quantitative results on ScanNet test set at the submisison time.
 
 ## Data Preparation
 
-There are two version of the DALES dataset. One stores instances per scene as .txt files, and the other stores all of the scenes as .ply files. Both are available on the vision lab watercooled machine in /home/vlab/Desktop/DALES_data. 
+There are two versions of the DALES dataset. One stores instances per scene as .txt files, and the other stores all of the scenes as .ply files. Both are available on the vlab-WaterCooled machine in /home/vlab/Desktop/DALES_data. 
 
 Alternatively, the .txt data can be downloaded from:
 ```
 https://drive.google.com/uc?id=1NK-sJOswWkkyp5OqQ4-HusidkyadXXiG&export=download
 ```
-Unfortunately, this copy of the DALES dataset is missing ground instances for several scenes. These missing instances cause errors during training and testing, and so they must be removed. 
+Unfortunately, this copy of the DALES dataset is missing ground instances for several scenes. These missing instances cause errors during training and testing, and so they must be removed or an alternate source of these .txt files must be found.
 
 The .ply data can be downloaded from: 
 ```
@@ -272,11 +272,11 @@ cd /dataset/DALEStext
 python prepare_data_inst_gttxt_DALES.py
 ```
 
-To succesfully train on this data, experiment with network parameters (I specifically recommend trying different clustering parameters), or implement your own gridding method. If you decide to implement your own gridding method I recommend you look at the data prep script /data/DALES_inst.py and the old gridding method /dataset/DALEStext/txt_to_ply_gridding.py.
+To succesfully train on this data, experiment with network parameters (I specifically recommend trying different clustering parameters), and/or implement your own gridding method. If you decide to implement your own gridding method I recommend you look at the data prep script /data/DALES_inst.py and the old gridding method /dataset/DALEStext/txt_to_ply_gridding.py.
 
 ## Data Preparation: DALES .txt
 
-Due to the aforementioned error with the .txt dataset, you will need to remove problematic files. For instance, certain files are missing their ground points. Files that DO have their ground instances can be identified using the command:
+Due to the aforementioned error with the .txt dataset, you will need to remove problematic files or find an alternate source for these files. If you use the aforementioned link, certain files will be missing their ground points. Files that DO have their ground points can be identified using the command:
 ```
 ls /PATH/TO/TXT/FILES/*/Annotations/ground*
 ```
@@ -381,5 +381,4 @@ This repo is built upon several repos, e.g., [SparseConvNet](https://github.com/
 
 ## Contact
 If you have any questions about this repo, please don't hesitate to email me (carrjp21@gmail.com). The original creator of PointGroup is also available (lijiang@cse.cuhk.edu.hk).
-
 
